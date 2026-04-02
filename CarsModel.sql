@@ -16,8 +16,9 @@
 -- who reports to whom
 -- • Offices: stores sales office data
 
+-- PK: officeCode (unique per office)
+-- No FKs — root table, nothing references outward
 DROP TABLE IF EXISTS offices;
--- 
 CREATE TABLE offices (
   officeCode varchar(10) NOT NULL,
   city varchar(50) NOT NULL,
@@ -47,9 +48,10 @@ UNLOCK TABLES;
 
 
 /*Table structure for table `employees` */
-
+-- PK: employeeNumber
+-- FK: officeCode → offices.officeCode (each employee belongs to one office)
+-- FK: reportsTo → employees.employeeNumber (self-ref, manager is also an employee)
 DROP TABLE IF EXISTS employees;
-
 CREATE TABLE employees (
   employeeNumber int(11) NOT NULL,
   lastName varchar(50) NOT NULL,
@@ -62,7 +64,9 @@ CREATE TABLE employees (
   PRIMARY KEY (employeeNumber),
   KEY reportsTo (reportsTo),
   KEY officeCode (officeCode),
+  --  FK: officeCode → offices.officeCode (each employee belongs to one office)
   CONSTRAINT employees_ibfk_2 FOREIGN KEY (officeCode) REFERENCES offices (officeCode), -- 
+  -- FK: reportsTo → employees.employeeNumber (self-ref, manager is also an employee)
   CONSTRAINT employees_ibfk_1 FOREIGN KEY (reportsTo) REFERENCES employees (employeeNumber)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -98,8 +102,9 @@ values (1002,'Murphy','Diane','x5800','dmurphy@classicmodelcars.com','1',NULL,'P
 UNLOCK TABLES;
 
 /*Table structure for table `customers` */
+-- PK: customerNumber
+-- FK: salesRepEmployeeNumber → employees.employeeNumber (each customer has one sales rep)	
 DROP TABLE IF EXISTS customers;
-
 CREATE TABLE customers (
   customerNumber int(11) NOT NULL,
   customerName varchar(50) NOT NULL,
@@ -116,6 +121,7 @@ CREATE TABLE customers (
   creditLimit double DEFAULT NULL,
   PRIMARY KEY (customerNumber),
   KEY salesRepEmployeeNumber (salesRepEmployeeNumber),
+  -- FK: salesRepEmployeeNumber → employees.employeeNumber (each customer has one sales rep)	
   CONSTRAINT customers_ibfk_1 FOREIGN KEY (salesRepEmployeeNumber) 
   REFERENCES employees (employeeNumber)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
@@ -132,9 +138,9 @@ UNLOCK TABLES;
 
 
 /*Table structure for table `orders` */
-
+-- PK: orderNumber
+-- FK: customerNumber → customers.customerNumber (each order placed by one customer)
 DROP TABLE IF EXISTS orders;
-
 CREATE TABLE orders (
   orderNumber int(11) NOT NULL,
   orderDate date NOT NULL,
@@ -144,6 +150,7 @@ CREATE TABLE orders (
   comments text,
   customerNumber int(11) NOT NULL,
   PRIMARY KEY (orderNumber),
+  -- FK: customerNumber → customers.customerNumber (each order placed by one customer)
   KEY customerNumber (customerNumber),
   CONSTRAINT orders_ibfk_1 FOREIGN KEY (customerNumber) 
   REFERENCES customers (customerNumber)
@@ -176,9 +183,9 @@ UNLOCK TABLES;
 
 
 /*Table structure for table `productlines` */
-
+-- PK: productLine
+-- No FKs — root table for product categories
 DROP TABLE IF EXISTS productlines;
-
 CREATE TABLE productlines (
   productLine varchar(50) NOT NULL,
   textDescription varchar(4000) DEFAULT NULL,
@@ -198,9 +205,9 @@ UNLOCK TABLES;
 
 
 /*Table structure for table `products` */
-
+-- PK: productCode
+-- FK: productLine → productlines.productLine (each product belongs to one category)
 DROP TABLE IF EXISTS products;
-
 CREATE TABLE products (
   productCode varchar(15) NOT NULL,
   productName varchar(70) NOT NULL,
@@ -213,6 +220,7 @@ CREATE TABLE products (
   MSRP double NOT NULL,
   PRIMARY KEY (productCode),
   KEY productLine (productLine), -- KEY = index
+  -- FK: productLine → productlines.productLine (each product belongs to one category)
   CONSTRAINT products_ibfk_1 FOREIGN KEY (productLine) REFERENCES productlines (productLine)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -227,9 +235,10 @@ UNLOCK TABLES;
 
 
 /*Table structure for table `orderdetails` */
-
+-- PK: orderNumber + productCode (composite — one row per product per order)
+-- FK: orderNumber → orders.orderNumber
+-- FK: productCode → products.productCode
 DROP TABLE IF EXISTS orderdetails;
-
 CREATE TABLE orderdetails (
   orderNumber int(11) NOT NULL,
   productCode varchar(15) NOT NULL,
@@ -254,9 +263,9 @@ UNLOCK TABLES;
 
 
 /*Table structure for table `payments` */
-
+-- PK: customerNumber + checkNumber (composite — one row per check per customer)
+-- FK: customerNumber → customers.customerNumber (each payment tied to one customer)
 DROP TABLE IF EXISTS payments;
-
 CREATE TABLE payments (
   customerNumber int(11) NOT NULL,
   checkNumber varchar(50) NOT NULL,
